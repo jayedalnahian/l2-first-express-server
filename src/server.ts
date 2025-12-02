@@ -1,49 +1,12 @@
-import dotenv from 'dotenv'
-import path from 'path';
-dotenv.config({ path: path.join(process.cwd(), '.env') });
-import express, { NextFunction, Request, Response } from 'express'
-import { Pool } from 'pg';
+import express, { NextFunction, Request, Response } from 'express';
+import { initDb } from './config/db';
+import { pool } from './config/db';
+import loggerMiddleware from './middleware/logger';
+import { userRoutes } from './modules/users/user.routes';
 const app = express()
-const port = 5000
-
-const pool = new Pool({
-    connectionString: `${process.env.CONNECTION_STRING}`
-});
-
-const initDb = async () => {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users(
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT null,
-        email VARCHAR(100) NOT null UNIQUE,
-        age INT,
-        phone VARCHAR(15),
-        address Text,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-    ) `);
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS todos(
-        id SERIAL PRIMARY KEY,
-        user_id INT REFERENCES users(id) ON DELETE CASCADE,
-        title VARCHAR(200),
-        description TEXT,
-        completed BOOLEAN DEFAULT FALSE,
-        due_date DATE,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-    ) `);
-    console.log('Tables are created or already exist.');
-
-};
-
+const port = process.env.PORT || 5000;
 
 initDb()
-
-const loggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
-    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
-    next();
-}
 
 // percer
 app.use(express.json())
@@ -55,45 +18,13 @@ app.get('/', loggerMiddleware, (req: Request, res: Response) => {
 
 
 
+
+
 // CRUD Operations for Users
-app.post('/users', loggerMiddleware, async (req: Request, res: Response) => {
-    const { name, email } = req.body;
-    try {
-        const result = await pool.query(`INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *`, [name, email]);
-        console.log(result.rows[0]);
-        res.status(201).json({
-            status: 'success',
-            message: 'Api is woring'
-        })
 
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        })
-    }
+// post user route moved to user.routes.ts
+app.use('/users', userRoutes)
 
-});
-
-app.get('/users', loggerMiddleware, async (req: Request, res: Response) => {
-    try {
-
-        const result = await pool.query(`SELECT * FROM users`);
-        res.status(200).json({
-            success: true,
-            message: 'Users retrieved successfully',
-            data: result.rows,
-        })
-
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-
-        })
-    }
-
-});
 
 app.get("/users/:id", loggerMiddleware, async (req: Request, res: Response) => {
     try {
