@@ -1,12 +1,13 @@
 import express, { Request, Response }  from 'express';
 import loggerMiddleware from '../../middleware/logger';
 import { userControllers } from './user.controller';
+import auth from '../../middleware/auth';
 const router  = express.Router();
 
 
 router.post("/", loggerMiddleware, userControllers.createUser)
 
-router.get("/", loggerMiddleware, userControllers.getUser)
+router.get("/", auth(), loggerMiddleware, userControllers.getUser)
 
 
 router.get("/:id", loggerMiddleware, userControllers.getSingleUser)

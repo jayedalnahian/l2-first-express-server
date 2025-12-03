@@ -2,6 +2,7 @@ import { Router } from "express";
 import loggerMiddleware from "../../middleware/logger";
 import { authController } from "./auth.controller";
 
+
 const router = Router()
 
 
